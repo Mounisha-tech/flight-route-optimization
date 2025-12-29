@@ -1,0 +1,6 @@
+source	destination	distance	time	price
+Delhi	Dubai	2200	3.5	150
+Dubai	London	5500	7.5	400
+London	New York	5600	8	450
+Delhi	London	6700	8.5	500
+Dubai	New York	11000	14	700
