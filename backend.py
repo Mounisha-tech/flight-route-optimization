@@ -21,3 +21,24 @@ print(G.nodes())
 print("\nEdges with weights:")
 for u,v,data in G.edges(data=True):
     print(f"{u} -> {v} | {data} ")
+
+
+# Trying to take the below as input 
+source="Delhi"
+destination="London"
+criteria="price"
+
+try:
+    path=nx.shortest_path(G,source=source,
+                          target=destination,weight=criteria)
+    total_cost=0
+    for i in range(len(path)-1):
+        total_cost+=G[path[i]][path[i+1]][criteria]
+    
+    print(f"\nBest route based on {criteria}")
+    print(" -> ".join(path))
+    print(f"Total {criteria}:{total_cost}")
+except nx.NetworkXNoPath:
+    print("No path exists between the selected airports")
+
+
