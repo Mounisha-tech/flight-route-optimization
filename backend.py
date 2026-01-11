@@ -1,5 +1,6 @@
 import pandas as pd
 import networkx as nx
+import matplotlib.pyplot as plt
 
 def load_data(filepath):
     """Load and clean flight dataset"""
@@ -34,6 +35,21 @@ def find_best_route(G,source,destination,criteria):
     
     except nx.NetworkXNoPath:
         return None,None
+
+
+def draw_graph(G,path=None):
+    """Draw graph and highlight best path"""
+    plt.figure(figsize=(10,6))
+
+    pos=nx.spring_layout(G,seed=42)
+    
+    nx.draw_networkx(G,pos,with_labels=True,node_color="lightblue",edge_color="gray",node_size=2000,font_size=9)
+
+    if path:
+        path_edges=list(zip(path,path[1:]))
+        nx.draw_networkx_edges(G,pos,edgelist=path_edges,edge_color="red",width=3)
+
+    return plt
 
 
 if __name__=="__main__":
