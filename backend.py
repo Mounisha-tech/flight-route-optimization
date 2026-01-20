@@ -42,6 +42,30 @@ def load_data(filepath):
 
     return df
 
+def build_graph(df):
+    G=nx.DiGraph()
+
+    for _,row in df.iterrows():
+        G.add_edge(row["source"],row["destination"],time=row["time"],price=row["price"],distance=row["distance"])
+
+    return G
+
+def find_best_route(G,source,destination,criteria):
+    try:
+        path=nx.shortest_path(G,source=source,target=destination,weight=criteria)
+
+        total_cost=0
+        for i in range(len(path)-1):
+            total_cost+=G[path[i]][path[i+1]][criteria]
+        
+        return path,total_cost
+    
+    except nx.NetworkXNoPath:
+        return None,None
+
+
+
+
 # Replaced the below method with new one 
 # def load_data(filepath):
 #     """Load and clean flight dataset"""
@@ -95,11 +119,21 @@ def load_data(filepath):
 
 if __name__=="__main__":
      df=load_data("data/Flight Data.xlsx")
+     
+     G=build_graph(df)
+     source="Mumbai"
+     destination="Hyderabad"
 
-     print(df.head())
+     for criteria in ["price","time","distance"]:
+         path,cost=find_best_route(G,source,destination,criteria)
 
-     print("\nData Info:")
-     print(df.info())
+         print(f"\nCriteria: {criteria}")
+         if path:
+             print("Route: ","->".join(path))
+             print(f"Total {criteria} :{cost}")
+         else:
+             print("No route found")
+         
 
     #  G=build_graph(df)
 
