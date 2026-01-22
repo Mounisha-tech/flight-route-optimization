@@ -23,6 +23,7 @@ def convert_duration_to_minutes(duration):
     return hours*60+minutes
 
 def load_data(filepath):
+    """Loads data and cleans it in required format"""
     df=pd.read_excel(filepath)
 
     df.columns=df.columns.str.strip().str.lower()
@@ -43,6 +44,7 @@ def load_data(filepath):
     return df
 
 def build_graph(df):
+    """Builds graph with the cleaned data"""
     G=nx.DiGraph()
 
     for _,row in df.iterrows():
@@ -51,71 +53,30 @@ def build_graph(df):
     return G
 
 def find_best_route(G,source,destination,criteria):
+    """Finds best route based on the given criteria from the given source to destination"""
     try:
         path=nx.shortest_path(G,source=source,target=destination,weight=criteria)
 
-        total_cost=0
-        for i in range(len(path)-1):
-            total_cost+=G[path[i]][path[i+1]][criteria]
+        total_cost=nx.shortest_path_length(G,source=source,target=destination,weight=criteria)
         
         return path,total_cost
     
     except nx.NetworkXNoPath:
         return None,None
-
-
-
-
-# Replaced the below method with new one 
-# def load_data(filepath):
-#     """Load and clean flight dataset"""
-#     df=pd.read_csv(filepath)
-#     return df
-
-
-# def build_graph(df):
-#     """Build directed graph from flight data"""
-#     G=nx.DiGraph()
-
-#     for _ ,row in df.iterrows():
-#         G.add_edge(row["source"],
-#                 row["destination"],
-#                 distance=row["distance"],
-#                 time=row["time"],
-#                 price=row["price"])
-#     return G
     
+def draw_graph(G,path=None):
+    """Plot the given route"""
+    plt.figure(figsize=(10,6))
 
-# def find_best_route(G,source,destination,criteria):
-#     """Find shortest path based on selected criteria"""
+    pos=nx.spring_layout(G,seed=42)
 
-#     try:
-#         path=nx.shortest_path(G,source=source,
-#                             target=destination,weight=criteria)
-#         total_cost=0
-#         for i in range(len(path)-1):
-#             total_cost+=G[path[i]][path[i+1]][criteria]
-        
-#         return path,total_cost
+    nx.draw(G,pos,with_labels=True,node_color="lightblue",edge_color="lightgray",node_size=1200,font_size=9)
+
+    if path:
+        path_edges=list(zip(path,path[1:]))
+        nx.draw_networkx_edges(G,pos,edgelist=path_edges,edge_color="red",width=3)
     
-#     except nx.NetworkXNoPath:
-#         return None,None
-
-
-# def draw_graph(G,path=None):
-#     """Draw graph and highlight best path"""
-#     plt.figure(figsize=(10,6))
-
-#     pos=nx.spring_layout(G,seed=42)
-    
-#     nx.draw_networkx(G,pos,with_labels=True,node_color="lightblue",edge_color="gray",node_size=2000,font_size=9)
-
-#     if path:
-#         path_edges=list(zip(path,path[1:]))
-#         nx.draw_networkx_edges(G,pos,edgelist=path_edges,edge_color="red",width=3)
-
-#     return plt
-
+    return plt
 
 if __name__=="__main__":
      df=load_data("data/Flight Data.xlsx")
@@ -123,29 +84,16 @@ if __name__=="__main__":
      G=build_graph(df)
      source="Mumbai"
      destination="Hyderabad"
+     criteria="price"
 
-     for criteria in ["price","time","distance"]:
-         path,cost=find_best_route(G,source,destination,criteria)
+     path,cost=find_best_route(G,source,destination,criteria)
 
-         print(f"\nCriteria: {criteria}")
-         if path:
-             print("Route: ","->".join(path))
-             print(f"Total {criteria} :{cost}")
-         else:
-             print("No route found")
+     print("Path:",path)
+     print("Cost",cost)
+
+     if path:
+         fig=draw_graph(G,path)
+         fig.show()
+
+     
          
-
-    #  G=build_graph(df)
-
-    #  source="Delhi"
-    #  destination="New York"
-    #  criteria="distance"
-
-    #  path,cost=find_best_route(G,source,destination,criteria)
-
-    #  if path:
-    #     print(f"\nBest route based on {criteria}")
-    #     print(" -> ".join(path))
-    #     print(f"Total {criteria}:{cost}")
-    #  else:
-    #     print("No path exists.")
