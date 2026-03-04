@@ -31,19 +31,22 @@ def load_data(filepath):
 
     df.columns=df.columns.str.strip().str.lower()
 
-    df=df.rename(columns={"source":"source",
-                          "destination":"destination",
+    df=df.rename(columns={
                           "duration":"time",
                           "price":"price",
                           "route":"route"})
+    
+    df["date_of_journey"]=pd.to_datetime(df["date_of_journey"],dayfirst=True)
 
-    df=df[["source","destination","time","price","route"]]
+    df["month"]=df["date_of_journey"].dt.month
+
+    df=df[["source","destination","time","price","route","date_of_journey","month"]]
 
     airport_mapping={"New Delhi":"Delhi"}
 
     df["source"]=df["source"].replace(airport_mapping)
     df["destination"]=df["destination"].replace(airport_mapping)
-    
+
     df["time"]=df["time"].apply(convert_duration_to_minutes)
 
     df=df.dropna()

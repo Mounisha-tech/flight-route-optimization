@@ -34,6 +34,7 @@ source_airports=sorted(original_df["source"].unique())
 destination_airports=sorted(original_df["destination"].unique())
 
 with st.container():
+
     source=st.selectbox("Source City",source_airports)
     destination=st.selectbox("Destination City",destination_airports)
 
@@ -42,6 +43,9 @@ with st.container():
         ["price","time","distance"],
         horizontal=True
     )
+
+    
+    vacation_mode=st.toggle("Student Vacation Mode")
 
 if st.button("Find Best Route"):
 
@@ -52,8 +56,20 @@ if st.button("Find Best Route"):
 
         with st.spinner("Finding best route..."):
 
+
+            # Apply vacation filter 
+            working_df=original_df.copy()
+
+            if vacation_mode:
+                st.info("Showing routes based on historical student vacation months.")
+                vacation_months=[5,6,12]
+                working_df=working_df[working_df["month"].isin(vacation_months)]
+
+            
             # building filtered data frame based on selected criteria
-            filtered_df=original_df.loc[original_df.groupby(["source","destination"])[criteria].idxmin()]
+            filtered_df=working_df.loc[
+                                        working_df.groupby(["source","destination"])[criteria].idxmin()
+                                        ]
             
             G=build_graph(filtered_df)
 
