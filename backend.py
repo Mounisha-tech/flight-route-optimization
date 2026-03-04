@@ -39,6 +39,11 @@ def load_data(filepath):
 
     df=df[["source","destination","time","price","route"]]
 
+    airport_mapping={"New Delhi":"Delhi"}
+
+    df["source"]=df["source"].replace(airport_mapping)
+    df["destination"]=df["destination"].replace(airport_mapping)
+    
     df["time"]=df["time"].apply(convert_duration_to_minutes)
 
     df=df.dropna()

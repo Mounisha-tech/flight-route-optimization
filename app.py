@@ -28,11 +28,14 @@ original_df=load_data("data/Flight Data.xlsx")
 # path,cost=find_best_route(G,source,destination,criteria)
 
 # Airports list
-airports=sorted(set(original_df["source"].tolist()+original_df["destination"].tolist()))
+# airports=sorted(set(original_df["source"].tolist()+original_df["destination"].tolist()))
+
+source_airports=sorted(original_df["source"].unique())
+destination_airports=sorted(original_df["destination"].unique())
 
 with st.container():
-    source=st.selectbox("Source City",airports)
-    destination=st.selectbox("Destination City",airports)
+    source=st.selectbox("Source City",source_airports)
+    destination=st.selectbox("Destination City",destination_airports)
 
     criteria=st.radio(
         "Optimize by",
@@ -96,7 +99,7 @@ if st.button("Find Best Route"):
                     segment_graph=build_visual_graph_from_route(route_str)
 
                     vis_G=nx.compose(vis_G,segment_graph)
-                    
+
             fig=draw_graph(vis_G)
             st.pyplot(fig)
         
