@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import re
 
 def convert_duration_to_minutes(duration):
+
     """Converts flight duration like '2h 50m' to total mintutes"""
 
     if pd.isna(duration):
@@ -23,37 +24,52 @@ def convert_duration_to_minutes(duration):
     return hours*60+minutes
 
 def load_data(filepath):
+
     """Loads data and cleans it in required format"""
+
     df=pd.read_excel(filepath)
 
     df.columns=df.columns.str.strip().str.lower()
 
     df=df.rename(columns={"source":"source",
                           "destination":"destination",
-                          "duration":"time","price":"price"})
+                          "duration":"time",
+                          "price":"price",
+                          "route":"route"})
 
-    df=df[["source","destination","time","price"]]
+    df=df[["source","destination","time","price","route"]]
 
     df["time"]=df["time"].apply(convert_duration_to_minutes)
+
     df=df.dropna()
 
     df["price"]=df["price"].astype(int)
     df["time"]=df["time"].astype(int)
-    df["distance"]=((df["time"]/60)*750).astype(int) #avg flight speed=750kmph
+
+    # approximate distance
+    df["distance"]=((df["time"]/60)*750).astype(int) #avg flight speed=750 kmph
 
     return df
 
 def build_graph(df):
+
     """Builds graph with the cleaned data"""
+
     G=nx.DiGraph()
 
     for _,row in df.iterrows():
-        G.add_edge(row["source"],row["destination"],time=row["time"],price=row["price"],distance=row["distance"])
+        G.add_edge(row["source"],
+                   row["destination"],
+                   time=row["time"],
+                   price=row["price"],
+                   distance=row["distance"])
 
     return G
 
 def find_best_route(G,source,destination,criteria):
+
     """Finds best route based on the given criteria from the given source to destination"""
+    
     try:
         path=nx.shortest_path(G,source=source,target=destination,weight=criteria)
 
@@ -65,18 +81,38 @@ def find_best_route(G,source,destination,criteria):
         return None,None
     
 def draw_graph(G,path=None):
+
     """Plot the given route"""
-    plt.figure(figsize=(10,6))
+
+    plt.figure(figsize=(8,5))
 
     pos=nx.spring_layout(G,seed=42)
 
-    nx.draw(G,pos,with_labels=True,node_color="lightblue",edge_color="lightgray",node_size=1200,font_size=9)
+    nx.draw(G,pos,with_labels=True,node_color="lightblue",edge_color="lightgray",node_size=1800,font_size=10,font_weight="bold") 
 
-    if path:
-        path_edges=list(zip(path,path[1:]))
-        nx.draw_networkx_edges(G,pos,edgelist=path_edges,edge_color="red",width=3)
+    # if path:
+    #     path_edges=list(zip(path,path[1:]))
+    #     nx.draw_networkx_edges(G,pos,edgelist=path_edges,edge_color="red",width=3)
     
     return plt
+
+
+def build_visual_graph_from_route(route_str):
+    """
+    Builds a temporary graph using airport codes from route column.
+    Example: 'DEK → LKO → BOM → COK'
+    """
+
+    route_nodes=route_str.split("→")
+    route_nodes=[node.strip() for node in route_nodes]
+
+    vis_G=nx.DiGraph()
+
+    for i in range(len(route_nodes)-1):
+        vis_G.add_edge(route_nodes[i],route_nodes[i+1])
+    
+    return vis_G
+
 
 if __name__=="__main__":
      df=load_data("data/Flight Data.xlsx")
