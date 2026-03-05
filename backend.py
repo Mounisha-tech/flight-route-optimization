@@ -90,11 +90,13 @@ def find_best_route(G,source,destination,criteria):
     
 def draw_graph(G,path=None):
 
-    """Plot the given route"""
+    """Draw graph as a flight path"""
 
-    plt.figure(figsize=(8,5))
+    plt.figure(figsize=(10,4))
 
-    pos=nx.spring_layout(G,seed=42)
+    nodes=list(G.nodes())
+
+    pos={node:(i,0) for i,node in enumerate(nodes)}
 
     nx.draw(G,pos,with_labels=True,node_color="lightblue",edge_color="lightgray",node_size=1800,font_size=10,font_weight="bold") 
 
@@ -121,6 +123,14 @@ def build_visual_graph_from_route(route_str):
     
     return vis_G
 
+def format_time(minutes):
+    hours=minutes//60
+    mins=minutes%60
+
+    if hours >0:
+        return f"{hours} hr {mins} min"
+    else:
+        return f"{mins} min"
 
 if __name__=="__main__":
      df=load_data("data/Flight Data.xlsx")

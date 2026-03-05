@@ -5,7 +5,8 @@ from backend import (load_data,
                      build_graph,
                      find_best_route,
                      draw_graph,
-                     build_visual_graph_from_route
+                     build_visual_graph_from_route,
+                     format_time
                     )
 
 # Page design 
@@ -33,6 +34,17 @@ original_df=load_data("data/Flight Data.xlsx")
 source_airports=sorted(original_df["source"].unique())
 destination_airports=sorted(original_df["destination"].unique())
 
+airport_code_map={
+    "DEL":"Delhi",
+    "BOM":"Mumbai",
+    "MAA":"Chennai",
+    "BLR":"Banglore",
+    "CCU":"Kolkata",
+    "COK":"Cochin",
+    "HYD":"Hyderaabd",
+    "LKO":"Lucknow"
+}
+
 with st.container():
 
     source=st.selectbox("Source City",source_airports)
@@ -47,7 +59,7 @@ with st.container():
     
     vacation_mode=st.toggle("Student Vacation Mode")
 
-if st.button("Find Best Route"):
+if st.button(" ✈ Find Best Route"):
 
     if source==destination:
         st.warning("Source and destination cannot be the same.")
@@ -61,6 +73,7 @@ if st.button("Find Best Route"):
             working_df=original_df.copy()
 
             if vacation_mode:
+
                 st.info("Showing routes based on historical student vacation months.")
                 vacation_months=[5,6,12]
                 working_df=working_df[working_df["month"].isin(vacation_months)]
@@ -83,19 +96,28 @@ if st.button("Find Best Route"):
         
         if path:
             st.success("Best route found!")
-            st.write("➡️".join(path))
-            st.write(f"**Total {criteria}:** {cost}")
 
-            # fig=draw_graph(G,path)
+            # Showing the flights that a passanger need to change 
+            st.subheader("Optimal Travel Route (Cities) ")
+            st.write(" ➡️ ".join(path))
+            
+            # Trip Summary 
+            st.subheader("Trip Summary")
 
-            # selected_row=filtered_df[
-            #     (filtered_df["source"]==source) &
-            #     (filtered_df["destination"]==destination)
-            # ].iloc[0]
+            if criteria=="price":
+                st.write(f"💰 **Total Price:** ₹{cost:,}")
+            elif criteria=="time":
+                st.write(f" ⏱ **Total Travel Time:** {format_time(cost)} ")
+            else:
+                st.write(f"📏 **Total Distance:** {cost} km")
 
-            # route_str=selected_row["route"]
 
-            # vis_G=build_visual_graph_from_route(route_str)
+            st.write(f"🛑 **Stops:** {len(path)-2 if len(path)>2 else 0}")
+            st.write(f"🧭 **Optimization Criteria:** {criteria.capitalize()}")
+
+            st.divider()
+
+            # Airport level visualization 
 
             vis_G=nx.DiGraph()
 
@@ -115,16 +137,44 @@ if st.button("Find Best Route"):
                     segment_graph=build_visual_graph_from_route(route_str)
 
                     vis_G=nx.compose(vis_G,segment_graph)
+            
+            airport_nodes=list(vis_G.nodes())
+
+            # Airport route formatting 
+
+            st.subheader("Actual Flight Path (Airports)")
+            st.write(" ✈ ".join(airport_nodes))
+
+            st.write("**Airport Codes:**")
+
+            for code in airport_nodes:
+                city=airport_code_map.get(code,"Unknown")
+                st.write(f"{code} - {city}")
+            st.caption(
+                "Airport route shows the actual flight legs including intermediate stops."
+            )
+
+            st.divider()
+
+            # Graph visualization 
+
+            st.subheader("Flight Route Visualization")
+
 
             fig=draw_graph(vis_G)
             st.pyplot(fig)
+
+            # fig=draw_graph(G,path)
+
+            # selected_row=filtered_df[
+            #     (filtered_df["source"]==source) &
+            #     (filtered_df["destination"]==destination)
+            # ].iloc[0]
+
+            # route_str=selected_row["route"]
+
+            # vis_G=build_visual_graph_from_route(route_str)
+
         
         else:
             st.error("No route found between selected cities")
-
-
-
-
-
-
-
