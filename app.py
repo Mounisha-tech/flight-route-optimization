@@ -1,180 +1,288 @@
 import streamlit as st
 import networkx as nx
+import time
 
-from backend import (load_data,
-                     build_graph,
-                     find_best_route,
-                     draw_graph,
-                     build_visual_graph_from_route,
-                     format_time
-                    )
+from backend import (
+    load_data,
+    build_graph,
+    find_best_route,
+    draw_graph,
+    build_visual_graph_from_route,
+    draw_route_map,
+    format_time
+)
 
-# Page design 
-st.set_page_config(page_title="⌯⌲ Flight Route Optimizer",layout="centered")
+# PAGE CONFIG
 
-st.title("🛫 Flight Route Optimizer")
-st.subheader("Student-friendly domestic flight route planner")
+st.set_page_config(page_title="✈️ Flight Route Optimizer", layout="centered")
 
-st.caption("Prices and durations are based on historical data and are for comaparision purposes only")
+# Side bar section 
 
+st.sidebar.title("✈ Flight Route Optimizer")
 
-# Logic building 
+st.sidebar.markdown(
+    """
+### About 
+ This application helps users find the **best flight route between Indian cities** using graph algorithms.
+ 
+ It optimizes routes based on:
+ 
+- 💰 **Price**
+- ⏱ **Travel Time**
+- 📏 **Distance**
 
-original_df=load_data("data/Flight Data.xlsx")
+The system analyzes historical flight data and computes the **optimal route using shortest path algorithms**.
 
-# # criteria=selected_criteria
-# filtered_df=original_df.loc[original_df.groupby(["source","destination"])[criteria].idxmin()]
-# G=build_graph(filtered_df)
+---
 
-# path,cost=find_best_route(G,source,destination,criteria)
+### How to use 
+1️⃣ Select **Source City**
 
-# Airports list
-# airports=sorted(set(original_df["source"].tolist()+original_df["destination"].tolist()))
+2️⃣ Select **Destination City**
 
-source_airports=sorted(original_df["source"].unique())
-destination_airports=sorted(original_df["destination"].unique())
+3️⃣ Choose optimization criteria  
+- Price  
+- Time  
+- Distance
 
-airport_code_map={
+4️⃣ (Optional) Enable **Student Vacation Mode**
+
+5️⃣ Click **Find Best Route**
+
+The app will display:
+
+✔ Optimal city route  
+✔ Airport-level flight path  
+✔ Trip summary  
+✔ Route visualization
+"""
+)
+
+st.sidebar.divider()
+
+st.sidebar.markdown(
+"""
+### 🎓 Student Vacation Mode
+Filters flights to those that operate during major **student travel periods**, specifically the **summer and winter vacation months (May, June, and December)**. This helps provide route suggestions that better reflect typical holiday travel patterns.
+"""
+)
+
+st.markdown("""
+<style>
+
+.route-card{
+padding:12px;
+border-radius:8px;
+font-size:18px;
+text-align:center;
+font-weight:600;
+border:1px solid #E5E7E9;
+}
+
+.airport-card{
+border:1px solid #E5E7E9;
+padding:10px;
+border-radius:6px;
+text-align:center;
+font-size:15px;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# HEADER
+
+st.title("✈ Flight Route Optimizer")
+
+st.caption("Student-friendly domestic flight planner")
+
+st.divider()
+
+# LOAD DATA
+
+original_df = load_data("data/Flight Data.xlsx")
+
+source_airports = sorted(original_df["source"].unique())
+destination_airports = sorted(original_df["destination"].unique())
+
+airport_code_map = {
     "DEL":"Delhi",
     "BOM":"Mumbai",
     "MAA":"Chennai",
-    "BLR":"Banglore",
+    "BLR":"Bangalore",
     "CCU":"Kolkata",
     "COK":"Cochin",
-    "HYD":"Hyderaabd",
+    "HYD":"Hyderabad",
     "LKO":"Lucknow"
 }
 
-with st.container():
+# INPUT SECTION
 
-    source=st.selectbox("Source City",source_airports)
-    destination=st.selectbox("Destination City",destination_airports)
+col1,col2 = st.columns(2)
 
-    criteria=st.radio(
-        "Optimize by",
-        ["price","time","distance"],
-        horizontal=True
-    )
+with col1:
+    source = st.selectbox("Source City", source_airports)
 
-    
-    vacation_mode=st.toggle("Student Vacation Mode")
+with col2:
+    destination = st.selectbox("Destination City", destination_airports)
 
-if st.button(" ✈ Find Best Route"):
+criteria = st.radio(
+    "Optimize by",
+    ["price","time","distance"],
+    horizontal=True
+)
 
-    if source==destination:
+vacation_mode = st.toggle("Student Vacation Mode")
+
+# ROUTE COMPUTATION
+
+if st.button("Find Best Route"):
+
+    if source == destination:
         st.warning("Source and destination cannot be the same.")
 
     else:
 
-        with st.spinner("Finding best route..."):
+        loader = st.empty()
 
+        loader.info("Finding the best route...")
 
-            # Apply vacation filter 
-            working_df=original_df.copy()
+        time.sleep(0.8)
 
-            if vacation_mode:
+        # Vacation filtering
+        working_df = original_df.copy()
 
-                st.info("Showing routes based on historical student vacation months.")
-                vacation_months=[5,6,12]
-                working_df=working_df[working_df["month"].isin(vacation_months)]
+        if vacation_mode:
 
-            
-            # building filtered data frame based on selected criteria
-            filtered_df=working_df.loc[
-                                        working_df.groupby(["source","destination"])[criteria].idxmin()
-                                        ]
-            
-            G=build_graph(filtered_df)
+            st.info("Showing routes based on historical student vacation months.")
 
-            path,cost=find_best_route(G,source,destination,criteria)
+            vacation_months = [5,6,12]
 
-            # selected_row=filtered_df[(filtered_df["source"]==source) & (filtered_df["destination"]==destination)].iloc[0]
+            working_df = working_df[
+                working_df["month"].isin(vacation_months)
+            ]
 
-            # route_str=selected_row["route"]
+        # Select best rows
+        filtered_df = working_df.loc[
+            working_df.groupby(["source","destination"])[criteria].idxmin()
+        ]
 
-            
-        
+        G = build_graph(filtered_df)
+
+        path, cost = find_best_route(G, source, destination, criteria)
+
+        loader.empty()
+
         if path:
+
             st.success("Best route found!")
 
-            # Showing the flights that a passanger need to change 
-            st.subheader("Optimal Travel Route (Cities) ")
-            st.write(" ➡️ ".join(path))
-            
-            # Trip Summary 
+            # CITY ROUTE
+
+            st.subheader("Optimal Travel Route")
+
+            route_text = " ✈ ".join(path)
+
+            st.markdown(
+                f"<div class='route-card'>{route_text}</div>",
+                unsafe_allow_html=True
+            )
+
+            # TRIP SUMMARY
+
             st.subheader("Trip Summary")
 
-            if criteria=="price":
-                st.write(f"💰 **Total Price:** ₹{cost:,}")
-            elif criteria=="time":
-                st.write(f" ⏱ **Total Travel Time:** {format_time(cost)} ")
-            else:
-                st.write(f"📏 **Total Distance:** {cost} km")
+            col1,col2,col3 = st.columns(3)
 
+            with col1:
 
-            st.write(f"🛑 **Stops:** {len(path)-2 if len(path)>2 else 0}")
-            st.write(f"🧭 **Optimization Criteria:** {criteria.capitalize()}")
+                if criteria == "price":
+                    st.metric("Total Price", f"₹{cost:,}")
+
+                elif criteria == "time":
+                    st.metric("Travel Time", format_time(cost))
+
+                else:
+                    st.metric("Distance", f"{cost} km")
+
+            with col2:
+
+                stops = len(path)-2 if len(path)>2 else 0
+                st.metric("Stops", stops)
+
+            with col3:
+
+                st.metric("Optimization", criteria.capitalize())
 
             st.divider()
 
-            # Airport level visualization 
+            # BUILD VISUAL GRAPH
 
-            vis_G=nx.DiGraph()
+            vis_G = nx.DiGraph()
 
             for i in range(len(path)-1):
 
-                segment_source=path[i]
-                segment_dest=path[i+1]
+                segment_source = path[i]
+                segment_dest = path[i+1]
 
-                segment_rows=filtered_df[
-                                (filtered_df["source"]==segment_source)
-                                & (filtered_df["destination"]==segment_dest)
+                segment_rows = filtered_df[
+                    (filtered_df["source"]==segment_source) &
+                    (filtered_df["destination"]==segment_dest)
                 ]
 
                 if not segment_rows.empty:
 
-                    route_str=segment_rows.iloc[0]["route"]
-                    segment_graph=build_visual_graph_from_route(route_str)
+                    route_str = segment_rows.iloc[0]["route"]
 
-                    vis_G=nx.compose(vis_G,segment_graph)
-            
-            airport_nodes=list(vis_G.nodes())
+                    segment_graph = build_visual_graph_from_route(route_str)
 
-            # Airport route formatting 
+                    vis_G = nx.compose(vis_G, segment_graph)
 
-            st.subheader("Actual Flight Path (Airports)")
-            st.write(" ✈ ".join(airport_nodes))
+            airport_nodes = list(vis_G.nodes())
 
-            st.write("**Airport Codes:**")
+            # AIRPORT ROUTE
 
-            for code in airport_nodes:
-                city=airport_code_map.get(code,"Unknown")
-                st.write(f"{code} - {city}")
-            st.caption(
-                "Airport route shows the actual flight legs including intermediate stops."
+            st.subheader("Actual Flight Path")
+
+            airport_route = " ✈ ".join(airport_nodes)
+
+            st.markdown(
+                f"<div class='route-card'>{airport_route}</div>",
+                unsafe_allow_html=True
             )
+
+            st.caption("Airport route shows intermediate stops taken by flights.")
+
+            # AIRPORT CODE MEANING
+
+            st.subheader("Airport Codes")
+
+            cols = st.columns(len(airport_nodes))
+
+            for i, code in enumerate(airport_nodes):
+
+                city = airport_code_map.get(code,"Unknown")
+
+                cols[i].markdown(
+                    f"""
+                    <div class='airport-card'>
+                    <b>{code}</b><br>
+                    {city}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
             st.divider()
 
-            # Graph visualization 
+            # GRAPH VISUALIZATION
 
             st.subheader("Flight Route Visualization")
 
+            map_fig=draw_route_map(airport_nodes)
 
-            fig=draw_graph(vis_G)
-            st.pyplot(fig)
+            st.plotly_chart(map_fig)
 
-            # fig=draw_graph(G,path)
-
-            # selected_row=filtered_df[
-            #     (filtered_df["source"]==source) &
-            #     (filtered_df["destination"]==destination)
-            # ].iloc[0]
-
-            # route_str=selected_row["route"]
-
-            # vis_G=build_visual_graph_from_route(route_str)
-
-        
         else:
-            st.error("No route found between selected cities")
+
+            st.error("No route found between selected cities.")

@@ -2,6 +2,20 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 import re
+import plotly.graph_objects as go
+
+
+# Airport coordinates for visualization graph
+airport_coords={
+    "DEL": (28.5562, 77.1000),
+    "BOM": (19.0896, 72.8656),
+    "MAA": (12.9941, 80.1709),
+    "BLR": (13.1986, 77.7066),
+    "CCU": (22.6547, 88.4467),
+    "COK": (10.1520, 76.4019),
+    "HYD": (17.2403, 78.4294),
+    "LKO": (26.7606, 80.8893)
+}
 
 def convert_duration_to_minutes(duration):
 
@@ -55,7 +69,7 @@ def load_data(filepath):
     df["time"]=df["time"].astype(int)
 
     # approximate distance
-    df["distance"]=((df["time"]/60)*750).astype(int) #avg flight speed=750 kmph
+    df["distance"]=((df["time"]/60)*750).astype(int) # assuming avg flight speed=750 kmph
 
     return df
 
@@ -100,10 +114,6 @@ def draw_graph(G,path=None):
 
     nx.draw(G,pos,with_labels=True,node_color="lightblue",edge_color="lightgray",node_size=1800,font_size=10,font_weight="bold") 
 
-    # if path:
-    #     path_edges=list(zip(path,path[1:]))
-    #     nx.draw_networkx_edges(G,pos,edgelist=path_edges,edge_color="red",width=3)
-    
     return plt
 
 
@@ -123,7 +133,60 @@ def build_visual_graph_from_route(route_str):
     
     return vis_G
 
+
+def draw_route_map(airport_nodes):
+    """Draws flight route on a map of India using Plotly"""
+    lats=[]
+    lons=[]
+    names=[]
+
+    for code in airport_nodes:
+        if code in airport_coords:
+            lat,lon=airport_coords[code]
+
+            lats.append(lat)
+            lons.append(lon)
+            names.append(code)
+
+    
+    fig=go.Figure()
+
+    # Airport markers 
+    fig.add_trace(go.Scattergeo(
+        lon=lons,
+        lat=lats,
+        text=names,
+        mode='markers+text',
+        marker=dict(size=10,color="red"),
+        textfont=dict(color="black",size=14),
+        textposition="top center"
+    ))
+
+    fig.add_trace(go.Scattergeo(
+        lon=lons,
+        lat=lats,
+        mode='lines+markers',
+        line=dict(width=2,color='blue'),
+        marker=dict(size=10,symbol="triangle-right",color="blue")
+    ))
+
+    fig.update_layout(
+        geo=dict(
+            scope='asia',
+            projection_type='natural earth',
+            showland=True,
+            landcolor='rgb(217,217,217)',
+            countrycolor="white",
+            lataxis_range=[5,35],
+            lonaxis_range=[65,100]
+        ),
+        margin={"r":0,"t":0,"l":0,"b":0}
+    )
+    return fig 
+
+
 def format_time(minutes):
+    """Converts minutes to readable format."""
     hours=minutes//60
     mins=minutes%60
 
@@ -148,6 +211,4 @@ if __name__=="__main__":
      if path:
          fig=draw_graph(G,path)
          fig.show()
-
-     
          
