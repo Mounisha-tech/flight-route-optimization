@@ -23,7 +23,7 @@ This project was built using the following technologies:
 ## Project Demo
 
 ### UI
-![UI](screenshots/ui.png)
+![UI](screenshots/UI.png)
 
 ### Route Visualization
 ![Route](screenshots/route.png)
