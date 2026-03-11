@@ -23,13 +23,13 @@ This project was built using the following technologies:
 ## Project Demo
 
 ### UI
-![UI](screenshots\ui.png)
+![UI](screenshots/ui.png)
 
 ### Route Visualization
-![Route](screenshots\route.png)
+![Route](screenshots/route.png)
 
 ### Map Visualization
-![Map](screenshots\map.png)
+![Map](screenshots/map.png)
 
 Live Demo:https://flight-route-optimization-mounisha.streamlit.app/
 
